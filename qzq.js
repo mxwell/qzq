@@ -1,5 +1,32 @@
 Words = new Meteor.Collection("words");
 
+Words.allow({
+	insert: function(userId, word) {
+		return userId && userId === word.user;
+	},
+	remove: function(userId, words) {
+		return _.all(words, function(word) {
+			if (userId !== word.user)
+				return false;
+			return true;
+		});
+	}
+});
+
+var addWord = function(user, direction, word_term, word_definition) {
+	var now = new Date().getTime();
+	return Words.insert({user: user, direction: direction, word_term: word_term,
+		word_definition: word_definition, created_at: now, repeat_at: now, repeat_state: 0});
+}
+
+var addKazakhWord = function(user, word_term, word_definition) {
+	return addWord(user, "kz-ru", word_term, word_definition);
+}
+
+var addKazakhWordByTheUser = function(word_term, word_definition) {
+	return addKazakhWord(Meteor.user()._id, word_term, word_definition);
+}
+
 if (Meteor.isClient) {
 	Meteor.subscribe("words");
 	Template.words_list.words = function () {
@@ -10,7 +37,7 @@ if (Meteor.isClient) {
 		word = Session.get("current_word") || "";
 		if (word.length == 0)
 			return null;
-		return Words.find({word: word});
+		return Words.find({word_term: word});
 	}
 
 	Template.word_definition.selected = function() {
@@ -30,13 +57,12 @@ if (Meteor.isClient) {
 			console.log("click add new definition");
 			word = Session.get('current_word');
 			article = $('#word_definition').val();
-			collisions = Words.find({word: word,
-				article: article});
+			if (article.length == 0)
+				return;
+			collisions = Words.find({word_term: word,
+				word_definition: article});
 			if (collisions.count() == 0) {
-				var id = Words.insert({word: word, article: article,
-				       direction: "kz-ru",
-					created_at: new Date().getTime(),
-					count: 0});
+				var id = addKazakhWordByTheUser(word, article);
 				Session.set('added_definition', id);
 			} else {
 				Session.set('added_definition', collisions.fetch()[0]._id);
@@ -47,6 +73,7 @@ if (Meteor.isClient) {
 		}),
 		'click .remove_link' : (function() {
 			console.log("click remove id: " + this._id);
+			console.log("user id: " + Words.findOne(this._id).user);
 			Words.remove({_id: this._id})
 		}),
 		'keyup #word_term' : (function(event) {
@@ -62,25 +89,8 @@ if (Meteor.isClient) {
 	});
 }
 
-var addWord = function(user, direction, word_term, word_definition) {
-	var now = new Date().getTime();
-	Words.insert({user: user, direction: direction, word_term: word_term,
-		word_definition: word_definition, created_at: now, repeat_at: now, repeat_state: 0});
-}
-
-var addKazakhWord = function(user, word_term, word_definition) {
-	addWord(user, "kz-ru", word_term, word_definition);
-}
-
 if (Meteor.isServer) {
 	Meteor.startup(function () {
-		// code to run on server at startup
-		if (Words.find().count() == 0) {
-			Words.insert({word: "Бала", article: "Мальчик", direction: "kz-ru", created_at: new Date().getTime(), count: 0})
-			Words.insert({word: "Кызы", article: "Девочка", direction: "kz-ru", created_at: new Date().getTime(), count: 0})
-			Words.insert({word: "Нан", article: "Хлеб", direction: "kz-ru", created_at: new Date().getTime(), count: 0})
-			Words.insert({word: "Алма", article: "Яблоко", direction: "kz-ru", created_at: new Date().getTime(), count: 0})
-		}
 		Session.set("current_word", '');
 	});
 }

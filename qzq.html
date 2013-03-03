@@ -11,6 +11,11 @@
 </head>
 
 <body>
+	<div>
+		<div align="right">
+			{{loginButtons align="right"}}
+		</div>
+	</div>
 	<div id="tabs">
 		<ul>
 			<li><a href="#new_word_tab">New word</a></li>
@@ -18,7 +23,7 @@
 			<li><a href="#learn_tab">Learning</a></li>
 		</ul>
 		<div id="new_word_tab">
-			{{>new_word}}
+			{{> new_word}}
 		</div>
 		<div id="words_list_tab">
 			{{> words_list}}
@@ -49,7 +54,7 @@
 
 <template name="word_definition">
 	<li class="word_definition {{selected}}">
-		{{article}} <a href="#" class="remove_link">x</a>
+		{{word_definition}} <a href="#" class="remove_link">x</a>
 	</li>
 </template>
 
@@ -64,21 +69,12 @@
 </template>
 
 <template name="word_article">
-	<dt class="word"><strong>Kazakh: </strong>{{word}}</dt>
+	<dt class="word"><strong>Kazakh: </strong>{{word_term}}</dt>
 	<dd class="article">
-		<strong>Russian: </strong>{{article}}<br />
-		Created at {{created_at}}<br />
-		Count: {{count}}
-		ID: {{_id}}
+		<strong>Russian: </strong>{{word_definition}}<br />
+		Created_at {{created_at}}<br />
+		Repeat_state: {{repeat_state}}<br />
+		ID: {{_id}}<br />
 	</dd>
 </template>
 
-<template name="hello">
-	<h1>Hello World!</h1>
-	По-казахски: <input type="text" id="qzq_word"><br.>
-	По-русски:   <input type="text" id="rus_word">
-	<input type="button" value="Отправить пару" id="submit_word_button"/>
-
-	<div id="words_list">
-	</div>
-</template>
