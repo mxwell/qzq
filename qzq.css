@@ -1,1 +1,8 @@
 /* CSS declarations go here */
+.word_definition {
+}
+
+.word_definition.selected {
+	color: red;
+}
+

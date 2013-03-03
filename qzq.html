@@ -1,11 +1,77 @@
 <head>
-  <title>qzq</title>
+	<title>Words Learning</title>
+	<link rel="stylesheet" href="http://code.jquery.com/ui/1.10.1/themes/base/jquery-ui.css" />
+	 <script src="http://code.jquery.com/jquery-1.9.1.js"></script>
+	 <script src="http://code.jquery.com/ui/1.10.1/jquery-ui.js"></script>
+	 <script>
+		$(function() {
+			$("#tabs").tabs();
+		});
+	 </script>
 </head>
 
 <body>
-  {{> hello}}
-  <div id="words_list"></div>
+	<div id="tabs">
+		<ul>
+			<li><a href="#new_word_tab">New word</a></li>
+			<li><a href="#words_list_tab">Words</a></li>
+			<li><a href="#learn_tab">Learning</a></li>
+		</ul>
+		<div id="new_word_tab">
+			{{>new_word}}
+		</div>
+		<div id="words_list_tab">
+			{{> words_list}}
+		</div>
+		<div id="learn_tab">
+			Empty
+		</div>
+	</div>
 </body>
+
+<template name="new_word">
+	Enter word: <input type="text" id="word_term"/>
+	<input type="button" value="Go" id="find_word_button"/></br>
+	<div id="word_definition_area">
+		{{#if definitions_list}}
+		<ol id="known_definitions">
+			{{#each definitions_list}}
+				{{> word_definition}}
+			{{/each}}
+		</ol>
+		<div id="new_definition_form">
+			New definition:<input type="text" id="word_definition"/>
+			<input type="button" value="Add" id="add_new_definition"/>
+		</div>
+		{{/if}}
+	</div>
+</template>
+
+<template name="word_definition">
+	<li class="word_definition {{selected}}">
+		{{article}} <a href="#" class="remove_link">x</a>
+	</li>
+</template>
+
+<template name="words_list">
+	<div class="words">
+		<dl>
+			{{#each words}}
+				{{> word_article}}
+			{{/each}}
+		</dl>
+	</div>
+</template>
+
+<template name="word_article">
+	<dt class="word"><strong>Kazakh: </strong>{{word}}</dt>
+	<dd class="article">
+		<strong>Russian: </strong>{{article}}<br />
+		Created at {{created_at}}<br />
+		Count: {{count}}
+		ID: {{_id}}
+	</dd>
+</template>
 
 <template name="hello">
 	<h1>Hello World!</h1>
