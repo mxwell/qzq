@@ -74,19 +74,21 @@
 		<strong>Russian: </strong>{{word_definition}}<br />
 		Created_at {{created_at}}<br />
 		Repeat_state: {{repeat_state}}<br />
-		ID: {{_id}}<br />
+		Repeated_at {{repeat_at}}<br />
 	</dd>
 </template>
 
 <template name="exercise">
 	{{#if quest_definition}}
 		<h3 id="quest_definition">{{quest_definition.word_definition}}</h3><br />
+		<div>
+			<span><input type="text" id="variant"></span>
+			<span id="variant_verdict" hide="true"></span>
+		</div>
+		<input type="button" value="Check" id="check_variant"/><br />
 	{{/if}}
-	<div>
-		<span><input type="text" id="variant"></span>
-		<span id="variant_verdict" hide="true"></span>
-	</div>
-	<input type="button" value="Check" id="check_variant"/><br />
-	
+	{{#unless quest_definition}}
+		<h3> You are awesome! You've repeated all the words! </h3>
+	{{/unless}}	
 </template>
 

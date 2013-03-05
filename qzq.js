@@ -10,35 +10,31 @@ Words.allow({
 		});
 	},
 	update: function(userId, words, fieldNames, modifier) {
-		/*return true;*/
 		return _.all(words, function(word) {
 			return userId == word.user;
 		});
 	}
 });
 
+var atTheMoment = function() {
+	return new Date().getTime();
+}
+
 var addWord = function(user, direction, word_term, word_definition) {
-	var now = new Date().getTime();
+	var now = atTheMoment();
 	return Words.insert({user: user, direction: direction, word_term: word_term,
 		word_definition: word_definition, created_at: now, repeat_at: now, repeat_state: 0});
 }
 
-var addKazakhWord = function(user, word_term, word_definition) {
-	return addWord(user, "kz-ru", word_term, word_definition);
-}
-
-var addKazakhWordByTheUser = function(word_term, word_definition) {
-	return addKazakhWord(Meteor.user()._id, word_term, word_definition);
-}
-
-var getUserId = function() {
-	return (Meteor.user() && Meteor.user()._id) || '';
-}
-
 if (Meteor.isClient) {
 	Meteor.subscribe("words");
+	
+	var getUserId = function() {
+		return (Meteor.user() && Meteor.user()._id) || '';
+	}
+
 	Template.words_list.words = function () {
-		return Words.find({}, {limit: 10});
+		return Words.find({user: getUserId()}, {limit: 100});
 	}
 
 	Template.new_word.definitions_list = function() {
@@ -52,6 +48,11 @@ if (Meteor.isClient) {
 		return Session.equals('added_definition', this._id) ?
 			'selected' : '';
 	}
+
+	var addWordWithDefaults = function(word_term, word_definition) {
+		return addWord(getUserId(), "kz-ru", word_term,
+				word_definition);
+	};
 
 	Template.new_word.events({
 		'click #find_word_button' : (function() {
@@ -70,7 +71,7 @@ if (Meteor.isClient) {
 			collisions = Words.find({word_term: word,
 				word_definition: article});
 			if (collisions.count() == 0) {
-				var id = addKazakhWordByTheUser(word, article);
+				var id = addWordWithDefaults(word, article);
 				Session.set('added_definition', id);
 			} else {
 				Session.set('added_definition', collisions.fetch()[0]._id);
@@ -96,19 +97,24 @@ if (Meteor.isClient) {
 		})
 	});
 
+	/* time between repetition, in secs */
+	var timings = [30 * 60, 6 * 60 * 60, 20 * 60 * 60, 24 * 60 * 60,
+	    24 * 60 * 60, 24 * 60 * 60, 24 * 60 * 60]
+
 	var getNextWord = function() {
 		var i, words;
-		for (i = 0; i < 6; ++i) {
-			words = Words.find({user: getUserId(), repeat_state: i});
+		for (i = 0; i < timings.length; ++i) {
+			words = Words.find({user: getUserId(),
+			       repeat_state: i, repeat_at: {$lt: atTheMoment() - timings[i] * 1000}});
 			if (words.count() > 0) {
 				return words.fetch()[_.random(words.count() - 1)];
 			}
 		}
-		return Words.findOne({user: getUserId()});
+		return false;
 	};
 
 	Template.exercise.quest_definition = function() {
-		var quest = getNextWord();
+		var quest = Session.get("quest") || getNextWord();
 		Session.set("quest", quest);
 		return quest;
 	}
@@ -149,6 +155,9 @@ if (Meteor.isClient) {
 			var variant = $('#variant').val();
 			var quest = Session.get("quest");
 			var verdict = (variant === quest.word_term);
+			console.log("verdict: " + verdict);
+			console.log("variant: " + variant);
+			console.log("word_term: " + quest.word_term);
 			showStatus(verdict);
 		}),
 		'keyup #variant' : (function(event) {
