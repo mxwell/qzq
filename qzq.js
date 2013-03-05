@@ -6,9 +6,13 @@ Words.allow({
 	},
 	remove: function(userId, words) {
 		return _.all(words, function(word) {
-			if (userId !== word.user)
-				return false;
-			return true;
+			return userId === word.user;
+		});
+	},
+	update: function(userId, words, fieldNames, modifier) {
+		/*return true;*/
+		return _.all(words, function(word) {
+			return userId == word.user;
 		});
 	}
 });
@@ -25,6 +29,10 @@ var addKazakhWord = function(user, word_term, word_definition) {
 
 var addKazakhWordByTheUser = function(word_term, word_definition) {
 	return addKazakhWord(Meteor.user()._id, word_term, word_definition);
+}
+
+var getUserId = function() {
+	return (Meteor.user() && Meteor.user()._id) || '';
 }
 
 if (Meteor.isClient) {
@@ -87,6 +95,69 @@ if (Meteor.isClient) {
 			}
 		})
 	});
+
+	var getNextWord = function() {
+		var i, words;
+		for (i = 0; i < 6; ++i) {
+			words = Words.find({user: getUserId(), repeat_state: i});
+			if (words.count() > 0) {
+				return words.fetch()[_.random(words.count() - 1)];
+			}
+		}
+		return Words.findOne({user: getUserId()});
+	};
+
+	Template.exercise.quest_definition = function() {
+		var quest = getNextWord();
+		Session.set("quest", quest);
+		return quest;
+	}
+
+	var statusShowedHandle = function(verdict) {
+		console.log("handled");
+		var quest = Session.get("quest");
+		$('#variant_verdict').fadeOut();
+		if (window.stored_verdict) {
+			$('#variant').val('');
+			Session.set("quest", undefined);
+			Words.update({_id: quest._id}, {$inc: {repeat_state: 1}});
+		}
+		window.stored_verdict = undefined;
+	}
+
+	var showStatus = function(verdict) {
+		var status = $('#variant_verdict');
+		if (verdict) {
+			status.html('Ok');
+			status.css('color', 'green');
+			status.fadeIn();
+		} else {
+			status.html('Wrong');
+			status.css('color', 'red');
+			status.fadeIn();
+		}
+		window.stored_verdict = verdict;
+		setTimeout(statusShowedHandle, 2200);
+	}
+
+	Template.exercise.events({
+		'click #check_variant' : (function() {
+			console.log("click check");
+			if (typeof window.stored_verdict === 'Boolean') {
+				return;
+			}
+			var variant = $('#variant').val();
+			var quest = Session.get("quest");
+			var verdict = (variant === quest.word_term);
+			showStatus(verdict);
+		}),
+		'keyup #variant' : (function(event) {
+			if (event.keyCode == 13) {
+				$('#check_variant').click();
+			}
+		})
+	});
+
 }
 
 if (Meteor.isServer) {

@@ -29,7 +29,7 @@
 			{{> words_list}}
 		</div>
 		<div id="learn_tab">
-			Empty
+			{{> exercise}}
 		</div>
 	</div>
 </body>
@@ -76,5 +76,17 @@
 		Repeat_state: {{repeat_state}}<br />
 		ID: {{_id}}<br />
 	</dd>
+</template>
+
+<template name="exercise">
+	{{#if quest_definition}}
+		<h3 id="quest_definition">{{quest_definition.word_definition}}</h3><br />
+	{{/if}}
+	<div>
+		<span><input type="text" id="variant"></span>
+		<span id="variant_verdict" hide="true"></span>
+	</div>
+	<input type="button" value="Check" id="check_variant"/><br />
+	
 </template>
 
