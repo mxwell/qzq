@@ -35,21 +35,26 @@
 </body>
 
 <template name="new_word">
-	Enter word: <input type="text" id="word_term"/>
-	<input type="button" value="Go" id="find_word_button"/></br>
-	<div id="word_definition_area">
-		{{#if definitions_list}}
-		<ol id="known_definitions">
-			{{#each definitions_list}}
-				{{> word_definition}}
-			{{/each}}
-		</ol>
-		<div id="new_definition_form">
-			New definition:<input type="text" id="word_definition"/>
-			<input type="button" value="Add" id="add_new_definition"/>
+	{{#if currentUser}}
+		Enter word: <input type="text" id="word_term"/>
+		<input type="button" value="Go" id="find_word_button"/></br>
+		<div id="word_definition_area">
+			{{#if definitions_list}}
+			<ol id="known_definitions">
+				{{#each definitions_list}}
+					{{> word_definition}}
+				{{/each}}
+			</ol>
+			<div id="new_definition_form">
+				New definition:<input type="text" id="word_definition"/>
+				<input type="button" value="Add" id="add_new_definition"/>
+			</div>
+			{{/if}}
 		</div>
-		{{/if}}
-	</div>
+	{{/if}}
+	{{#unless currentUser}}
+		<h3>Please sign in before start!</h3>
+	{{/unless}}
 </template>
 
 <template name="word_definition">
@@ -79,16 +84,18 @@
 </template>
 
 <template name="exercise">
-	{{#if quest_definition}}
-		<h3 id="quest_definition">{{quest_definition.word_definition}}</h3><br />
-		<div>
-			<span><input type="text" id="variant"></span>
-			<span id="variant_verdict" hide="true"></span>
-		</div>
-		<input type="button" value="Check" id="check_variant"/><br />
+	{{#if currentUser}}
+		{{#if quest_definition}}
+			<h3 id="quest_definition">{{quest_definition.word_definition}}</h3><br />
+			<div>
+				<span><input type="text" id="variant"></span>
+				<span id="variant_verdict" hide="true"></span>
+			</div>
+			<input type="button" value="Check" id="check_variant"/><br />
+		{{/if}}
+		{{#unless quest_definition}}
+			<h3> You are awesome! You've repeated all the words! </h3>
+		{{/unless}}	
 	{{/if}}
-	{{#unless quest_definition}}
-		<h3> You are awesome! You've repeated all the words! </h3>
-	{{/unless}}	
 </template>
 
