@@ -32,6 +32,10 @@
 			{{> exercise}}
 		</div>
 	</div>
+	<div id="footer" align="center">
+		<a href="https://github.com">github.com/</a><a href="https://github.com/mxwell">mxwell/</a><a href="https://github.com/mxwell/qzq">qzq</a><br />
+		2013
+	</div>
 </body>
 
 <template name="new_word">
@@ -74,12 +78,12 @@
 </template>
 
 <template name="word_article">
-	<dt class="word"><strong>Kazakh: </strong>{{word_term}}</dt>
+	<dt class="word"><strong>Word: </strong>{{word_term}}</dt>
 	<dd class="article">
-		<strong>Russian: </strong>{{word_definition}}<br />
+		<strong>Translation: </strong>{{word_definition}}<br />
 		Created_at {{created_at}}<br />
 		Repeat_state: {{repeat_state}}<br />
-		Repeated_at {{repeat_at}}<br />
+		Repeated_at {{repeated_at}}<br />
 	</dd>
 </template>
 

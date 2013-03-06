@@ -1,34 +1,13 @@
 Words = new Meteor.Collection("words");
 
-Words.allow({
-	insert: function(userId, word) {
-		return userId && userId === word.user;
-	},
-	remove: function(userId, words) {
-		return _.all(words, function(word) {
-			return userId === word.user;
-		});
-	},
-	update: function(userId, words, fieldNames, modifier) {
-		return _.all(words, function(word) {
-			return userId == word.user;
-		});
-	}
-});
-
-var atTheMoment = function() {
-	return new Date().getTime();
-}
-
-var addWord = function(user, direction, word_term, word_definition) {
-	var now = atTheMoment();
-	return Words.insert({user: user, direction: direction, word_term: word_term,
-		word_definition: word_definition, created_at: now, repeat_at: now, repeat_state: 0});
-}
 
 if (Meteor.isClient) {
 	Meteor.subscribe("words");
 	
+	var atTheMoment = function() {
+		return new Date().getTime();
+	}
+
 	var getUserId = function() {
 		return (Meteor.user() && Meteor.user()._id) || '';
 	}
@@ -50,8 +29,9 @@ if (Meteor.isClient) {
 	}
 
 	var addWordWithDefaults = function(word_term, word_definition) {
-		return addWord(getUserId(), "kz-ru", word_term,
-				word_definition);
+		var now = atTheMoment();
+		return Words.insert({user: getUserId(), word_term: word_term,
+			word_definition: word_definition, created_at: now, repeated_at: now, repeat_state: 0});
 	};
 
 	Template.new_word.events({
@@ -98,14 +78,14 @@ if (Meteor.isClient) {
 	});
 
 	/* time between repetition, in secs */
-	var timings = [30 * 60, 6 * 60 * 60, 20 * 60 * 60, 24 * 60 * 60,
+	var timings = [0, 30 * 60, 6 * 60 * 60, 20 * 60 * 60, 24 * 60 * 60,
 	    24 * 60 * 60, 24 * 60 * 60, 24 * 60 * 60]
 
 	var getNextWord = function() {
 		var i, words;
 		for (i = 0; i < timings.length; ++i) {
 			words = Words.find({user: getUserId(),
-			       repeat_state: i, repeat_at: {$lt: atTheMoment() - timings[i] * 1000}});
+			       repeat_state: i, repeated_at: {$lt: atTheMoment() - timings[i] * 1000}});
 			if (words.count() > 0) {
 				return words.fetch()[_.random(words.count() - 1)];
 			}
@@ -126,7 +106,7 @@ if (Meteor.isClient) {
 		if (window.stored_verdict) {
 			$('#variant').val('');
 			Session.set("quest", undefined);
-			Words.update({_id: quest._id}, {$inc: {repeat_state: 1}});
+			Words.update({_id: quest._id}, {$inc: {repeat_state: 1}, $set: {repeated_at: atTheMoment()}});
 		}
 		window.stored_verdict = undefined;
 	}
@@ -171,6 +151,23 @@ if (Meteor.isClient) {
 
 if (Meteor.isServer) {
 	Meteor.startup(function () {
+		var admin = Meteor.users.findOne({"emails.address": "max.well44@yahoo.com"});
+		var admin_id = (admin && admin._id) || '';
 		Session.set("current_word", '');
+		Words.allow({
+			insert: function(userId, word) {
+				return userId && userId === word.user;
+			},
+			remove: function(userId, words) {
+				return (userId === admin_id) || _.all(words, function(word) {
+					return userId === word.user;
+				});
+			},
+			update: function(userId, words, fieldNames, modifier) {
+				return (userId === admin_id) || _.all(words, function(word) {
+					return userId == word.user;
+				});
+			}
+		});
 	});
 }
