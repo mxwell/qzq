@@ -55,7 +55,7 @@ if (Meteor.isClient) {
 		for (i = 0; i < timings.length; ++i) {
 			size = Words.find({user: getUserId(), repeat_state: i}).count();
 			if (size > 0) {
-				var group_size = size + (size > 1 ? ' words' : ' word');
+				var group_size = size + (size > 1 ? ' words have' : ' word has');
 				var repetitions = i + (i > 1 ? ' times' : ' time');
 				result.push({group_size: group_size, repetitions: repetitions});
 			}
