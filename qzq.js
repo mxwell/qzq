@@ -12,8 +12,55 @@ if (Meteor.isClient) {
 		return (Meteor.user() && Meteor.user()._id) || '';
 	}
 
+	/* time between repetition, in secs */
+	var timings = [0, 30 * 60, 6 * 60 * 60, 20 * 60 * 60, 24 * 60 * 60,
+	    24 * 60 * 60, 24 * 60 * 60, 24 * 60 * 60]
+
+	var getNextWord = function() {
+		var i, words;
+		var nextTime = atTheMoment() + 1e9;
+		for (i = 0; i < timings.length; ++i) {
+			var timing = timings[i] * 1000;
+			words = Words.find({user: getUserId(),
+			       repeat_state: i, repeated_at: {$lt: atTheMoment() - timing}});
+			if (words.count() > 0) {
+				Session.set('next_word_period', undefined);
+				return words.fetch()[_.random(words.count() - 1)];
+			}
+			words = Words.find({user: getUserId(),
+				repeat_state: i}, {sort: {repeated_at: 1}});
+			if (words.count() > 0) {
+				nextTime = Math.min(nextTime,
+					words.fetch()[0].repeated_at + timing);
+			}
+		}
+		if (nextTime > atTheMoment() + 1e8) {
+			Session.set('next_word_period', undefined);
+		} else {
+			Session.set('next_word_period',
+				nextTime - atTheMoment());
+		}
+		return false;
+	};
 	Template.words_list.words = function () {
 		return Words.find({user: getUserId()}, {limit: 100});
+	}
+
+	Template.words_list.dictionary_size = function() {
+		return Words.find({user: getUserId()}).count();
+	}
+
+	Template.words_list.word_groups = function() {
+		var i, result = [];
+		for (i = 0; i < timings.length; ++i) {
+			size = Words.find({user: getUserId(), repeat_state: i}).count();
+			if (size > 0) {
+				var group_size = size + (size > 1 ? ' words' : ' word');
+				var repetitions = i + (i > 1 ? ' times' : ' time');
+				result.push({group_size: group_size, repetitions: repetitions});
+			}
+		}	
+		return result;
 	}
 
 	Template.new_word.definitions_list = function() {
@@ -34,6 +81,39 @@ if (Meteor.isClient) {
 			word_definition: word_definition, created_at: now, repeated_at: now, repeat_state: 0});
 	};
 
+	var MINUTE_T = 60 * 1000;
+	var HOUR_T = 60 * MINUTE_T;
+	var DAY_T = 24 * HOUR_T;
+	var getHumanViewForPeriod = function(period) {
+		if (period > DAY_T) {
+			return 'more than a day';
+		} else if (period > HOUR_T) {
+			var hours = Math.floor(period / HOUR_T);
+			if (hours > 1) {
+				hours = hours + ' hours';
+			} else {
+				hours = 'an hour';
+			}
+			return 'about ' + hours;
+		} else if (period > MINUTE_T) {
+			var minutes = Math.floor(period / MINUTE_T);
+			if (minutes > 1) {
+				return minutes + ' minutes';
+			} else {
+				return 'a minute';
+			}
+		} else {
+			return 'less than a minute';
+		}
+	}
+
+	var nextWordTimerHandler = function() {
+		var period = Session.get('next_word_period');
+		if (typeof period !== 'undefined') {
+			Session.set('next_word_period', period - MINUTE_T);
+		}
+	}
+
 	Template.new_word.events({
 		'click #find_word_button' : (function() {
 			console.log("click add word");
@@ -53,6 +133,7 @@ if (Meteor.isClient) {
 			if (collisions.count() == 0) {
 				var id = addWordWithDefaults(word, article);
 				Session.set('added_definition', id);
+				Session.set('quest', getNextWord());
 			} else {
 				Session.set('added_definition', collisions.fetch()[0]._id);
 			}
@@ -77,26 +158,22 @@ if (Meteor.isClient) {
 		})
 	});
 
-	/* time between repetition, in secs */
-	var timings = [0, 30 * 60, 6 * 60 * 60, 20 * 60 * 60, 24 * 60 * 60,
-	    24 * 60 * 60, 24 * 60 * 60, 24 * 60 * 60]
-
-	var getNextWord = function() {
-		var i, words;
-		for (i = 0; i < timings.length; ++i) {
-			words = Words.find({user: getUserId(),
-			       repeat_state: i, repeated_at: {$lt: atTheMoment() - timings[i] * 1000}});
-			if (words.count() > 0) {
-				return words.fetch()[_.random(words.count() - 1)];
-			}
-		}
-		return false;
-	};
-
 	Template.exercise.quest_definition = function() {
 		var quest = Session.get("quest") || getNextWord();
 		Session.set("quest", quest);
 		return quest;
+	}
+
+	Template.exercise.next_word_time = function() {
+		var period = Session.get('next_word_period');
+		if (typeof period !== 'undefined') {
+			if (period > MINUTE_T) {
+				setTimeout(nextWordTimerHandler, MINUTE_T);
+			}
+			period = 'in ' + getHumanViewForPeriod(period);
+		}
+		console.log("next word time: " + period);
+		return period;
 	}
 
 	var statusShowedHandle = function(verdict) {

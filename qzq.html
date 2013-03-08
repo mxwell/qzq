@@ -69,22 +69,31 @@
 
 <template name="words_list">
 	<div class="words">
-		<dl>
+		<h3>Dictionary contains {{dictionary_size}} word articles:</h3>
+		<ul>
+			{{#each word_groups}}
+				{{> word_group}}
+			{{/each}}
+		</ul>
+		<h3>Some of the words:</h3>
+		<ol>
 			{{#each words}}
 				{{> word_article}}
 			{{/each}}
-		</dl>
+		</ol>
 	</div>
 </template>
 
+<template name="word_group">
+	<li>
+		{{group_size}} have been repeated {{repetitions}}
+	</li>
+</template>
+
 <template name="word_article">
-	<dt class="word"><strong>Word: </strong>{{word_term}}</dt>
-	<dd class="article">
-		<strong>Translation: </strong>{{word_definition}}<br />
-		Created_at {{created_at}}<br />
-		Repeat_state: {{repeat_state}}<br />
-		Repeated_at {{repeated_at}}<br />
-	</dd>
+	<li>
+		{{word_term}} => {{word_definition}} ({{repeat_state}} times)
+	</li>
 </template>
 
 <template name="exercise">
@@ -98,7 +107,10 @@
 			<input type="button" value="Check" id="check_variant"/><br />
 		{{/if}}
 		{{#unless quest_definition}}
-			<h3> You are awesome! You've repeated all the words! </h3>
+			<h3>You are awesome! You've repeated all the words!</h3>
+			{{#if next_word_time}}
+				<h4>Next word will be ready {{next_word_time}}</h4>
+			{{/if}}
 		{{/unless}}	
 	{{/if}}
 </template>
