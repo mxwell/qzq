@@ -123,7 +123,7 @@ if (Meteor.isClient) {
 			status.fadeIn();
 		}
 		window.stored_verdict = verdict;
-		setTimeout(statusShowedHandle, 2200);
+		setTimeout(statusShowedHandle, 1000);
 	}
 
 	Template.exercise.events({
