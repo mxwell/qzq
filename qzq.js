@@ -145,6 +145,7 @@ if (Meteor.isClient) {
 			console.log("click remove id: " + this._id);
 			console.log("user id: " + Words.findOne(this._id).user);
 			Words.remove({_id: this._id})
+			Session.set('quest', getNextWord());
 		}),
 		'keyup #word_term' : (function(event) {
 			if (event.keyCode == 13) {
