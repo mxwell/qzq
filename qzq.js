@@ -231,7 +231,8 @@ if (Meteor.isServer) {
 	Meteor.startup(function () {
 		var admin = Meteor.users.findOne({"emails.address": "max.well44@yahoo.com"});
 		var admin_id = (admin && admin._id) || '';
-		Session.set("current_word", '');
+		/* Session is not available from server context, is it? */
+		/*Session.set("current_word", '');*/
 		Words.allow({
 			insert: function(userId, word) {
 				return userId && userId === word.user;
