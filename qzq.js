@@ -3,6 +3,7 @@ Words = new Meteor.Collection("words");
 
 if (Meteor.isClient) {
 	Meteor.subscribe("words");
+	Session.set("current_word", '');
 	
 	var atTheMoment = function() {
 		return new Date().getTime();
@@ -231,21 +232,15 @@ if (Meteor.isServer) {
 	Meteor.startup(function () {
 		var admin = Meteor.users.findOne({"emails.address": "max.well44@yahoo.com"});
 		var admin_id = (admin && admin._id) || '';
-		/* Session is not available from server context, is it? */
-		/*Session.set("current_word", '');*/
 		Words.allow({
 			insert: function(userId, word) {
 				return userId && userId === word.user;
 			},
-			remove: function(userId, words) {
-				return (userId === admin_id) || _.all(words, function(word) {
-					return userId === word.user;
-				});
+			remove: function(userId, word) {
+				return (userId === admin_id) || (userId === word.user);
 			},
-			update: function(userId, words, fieldNames, modifier) {
-				return (userId === admin_id) || _.all(words, function(word) {
-					return userId == word.user;
-				});
+			update: function(userId, word, fieldNames, modifier) {
+				return (userId === admin_id) || (userId === word.user);
 			}
 		});
 	});
